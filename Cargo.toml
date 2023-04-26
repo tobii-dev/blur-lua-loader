@@ -1,0 +1,16 @@
+[package]
+name = "blur-lua-loader"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "lua_hooks"
+crate-type = ["cdylib"]
+
+[dependencies]
+log = "0.4.17"
+log-panics = { version = "2.1.0", features = ["with-backtrace"] }
+mlua-sys = { version = "0.1.0", features = ["lua51", "vendored"] }
+simplelog = "0.12.1"
+windows = { version = "0.48.0", features = ["Win32_Foundation", "Foundation_Numerics", "Win32_System_SystemServices", "Win32_System_Memory", "Win32_System_LibraryLoader"] }
