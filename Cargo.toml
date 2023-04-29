@@ -9,6 +9,8 @@ name = "lua_hooks"
 crate-type = ["cdylib"]
 
 [dependencies]
+colored = "2.0.0"
+cstr = "0.2.11"
 log = "0.4.17"
 log-panics = { version = "2.1.0", features = ["with-backtrace"] }
 mlua-sys = { version = "0.1.0", features = ["lua51", "vendored"] }

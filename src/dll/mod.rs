@@ -1,5 +1,7 @@
 use windows::Win32::System::SystemServices::{DLL_PROCESS_ATTACH, DLL_PROCESS_DETACH};
 
+pub mod dll_exports;
+
 #[no_mangle]
 #[allow(non_snake_case)]
 extern "system" fn DllMain(
