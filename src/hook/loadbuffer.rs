@@ -31,6 +31,10 @@ unsafe extern "C" fn loadbuffer(
 	lua_pushcfunction(s, api::solo);
 	lua_setglobal(s, cstr!("solo").as_ptr());
 
+	// used for coding horrors
+	lua_pushcfunction(s, api::notify);
+	lua_setglobal(s, cstr!("notify").as_ptr());
+
 	// used for fps limiter
 	lua_pushcfunction(s, api::set_fps);
 	lua_setglobal(s, cstr!("set_fps").as_ptr());
@@ -68,9 +72,9 @@ pub fn set_hook_loadbuffer(ptr_module_base: *mut c_void) {
 	// Windows will be angry if we write to protected memory!
 	let src_flags = &mut PAGE_PROTECTION_FLAGS::default();
 	let tmp_flags = PAGE_EXECUTE_READWRITE;
-	unsafe { VirtualProtect(ptr_src, INS_CALL_LEN as usize, tmp_flags, src_flags) };
+	unsafe { VirtualProtect(ptr_src, INS_CALL_LEN as usize, tmp_flags, src_flags).unwrap() };
 	// finally overwriting the jump
 	unsafe { ptr.write(rel_jmp) };
 	// restore original PAGE_PROTECTION_FLAGS
-	unsafe { VirtualProtect(ptr_src, INS_CALL_LEN as usize, *src_flags, src_flags) };
+	unsafe { VirtualProtect(ptr_src, INS_CALL_LEN as usize, *src_flags, src_flags).unwrap() };
 }

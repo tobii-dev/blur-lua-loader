@@ -1,19 +1,38 @@
 #![cfg(windows)]
 
-pub mod dll;
 pub mod hook;
 
 use std::ffi::c_void;
 
 use crate::hook::loadbuffer::set_hook_loadbuffer;
-use windows::{
-	core::PCSTR,
-	Win32::{Foundation::HMODULE, System::LibraryLoader::GetModuleHandleA},
-};
+use windows::{core::PCSTR, Win32::System::LibraryLoader::GetModuleHandleA};
 
 use simplelog::*;
 
-pub fn init(module: HMODULE) {
+use blur_plugins_core::{BlurAPI, BlurEvent, BlurPlugin};
+
+pub static mut API: Option<Box<&mut dyn BlurAPI>> = None;
+
+#[repr(C)]
+pub struct MyLuaHooksPlugin {}
+
+impl BlurPlugin for MyLuaHooksPlugin {
+	fn name(&self) -> &'static str {
+		"MyLuaHooksPlugin!"
+	}
+
+	fn on_event(&self, _event: &BlurEvent) {
+		//log::info!("{}: {:?}", &self.name(), &_event);
+	}
+
+	fn free(&self) {
+		// idk should we do something here?
+	}
+}
+
+#[no_mangle]
+fn plugin_init(api: &'static mut dyn BlurAPI) -> Box<dyn BlurPlugin> {
+	unsafe { API = Some(Box::new(api)) }
 	let cfg = ConfigBuilder::new()
 		.set_time_offset_to_local()
 		.unwrap()
@@ -35,12 +54,9 @@ pub fn init(module: HMODULE) {
 	])
 	.unwrap();
 	log_panics::init();
-	log::info!("Hi from lua_hooks: {module:X?}");
 
 	let ptr_base: *mut c_void = unsafe { GetModuleHandleA(PCSTR::null()) }.unwrap().0 as _;
 	set_hook_loadbuffer(ptr_base);
-}
 
-pub fn free(module: HMODULE) {
-	log::info!("Bye from lua_hooks: {module:X?}");
+	Box::new(MyLuaHooksPlugin {})
 }
