@@ -1,6 +1,6 @@
 use std::ffi::{c_int, c_uchar, c_void, CStr};
 
-use blur_plugins_core::BlurEvent;
+use blur_plugins_core::BlurNotification;
 
 use mlua_sys::{
 	luaL_typename, lua_State, lua_gettable, lua_gettop, lua_toboolean, lua_tonumber, lua_tostring,
@@ -122,6 +122,7 @@ pub unsafe extern "C-unwind" fn print_api(s: *mut lua_State) -> c_int {
 		};
 		output.push_str(&v);
 	}
+	//log::debug!("[Lua] {output}");
 
 	{
 		use colored::*;
@@ -185,6 +186,7 @@ pub unsafe extern "C-unwind" fn print_debug(s: *mut lua_State) -> c_int {
 	0
 }
 
+//TODO: structured events from Lua to blur_api. Considering an events Table
 pub unsafe extern "C-unwind" fn notify(s: *mut lua_State) -> c_int {
 	let argc = lua_gettop(s);
 	for idx in 1..=argc {
@@ -212,16 +214,17 @@ pub unsafe extern "C-unwind" fn notify(s: *mut lua_State) -> c_int {
 
 				if let Some(blur_api) = &mut crate::API {
 					// FIXME: this makes no sense right now.
-					let event = match n {
-						0 => BlurEvent::NoEvent,
-						1 => BlurEvent::Login(2),
-						2 => BlurEvent::Screen(2),
+					let notif = match n {
+						0 => BlurNotification::Nothing,
+						1 => BlurNotification::LoginStart,
+						2 => BlurNotification::LoginEnd { success: true }, // FIXME: where login
+						3 => BlurNotification::Screen { name: "".to_string() }, // FIXME: Clean Lua (table) -> Rust BlurNotification enum
 						_ => {
 							log::debug!("Got unknown notify({n}) event from Lua?");
 							return 0;
 						}
 					};
-					blur_api.notify(&event); //TODO: Sync stuff
+					blur_api.notify(notif);
 				}
 			}
 			LUA_TSTRING => {
