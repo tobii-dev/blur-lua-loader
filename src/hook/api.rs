@@ -38,7 +38,7 @@ pub unsafe extern "C-unwind" fn set_fps(s: *mut lua_State) -> c_int {
 					fps = 0.0;
 				}
 				if let Some(blur_api) = &mut crate::API {
-					log::debug!("set_fps(fps = {fps})");
+					log::trace!("set_fps(fps = {fps})");
 					blur_api.set_fps(fps);
 				}
 			}
@@ -122,7 +122,8 @@ pub unsafe extern "C-unwind" fn print_api(s: *mut lua_State) -> c_int {
 		};
 		output.push_str(&v);
 	}
-	//log::debug!("[Lua] {output}");
+
+	log::debug!("[Lua] {output}");
 
 	{
 		use colored::*;
@@ -175,14 +176,13 @@ pub unsafe extern "C-unwind" fn print_debug(s: *mut lua_State) -> c_int {
 		output.push_str(&v);
 	}
 
-	/*
+	//log::debug!("[Lua Debug] {output}");
+
 	{
 		use colored::*;
 		let output = output.green();
 		std::println!("{output}");
 	}
-	*/
-	//log::debug!("{output}");
 	0
 }
 
@@ -217,10 +217,10 @@ pub unsafe extern "C-unwind" fn notify(s: *mut lua_State) -> c_int {
 					let notif = match n {
 						0 => BlurNotification::Nothing,
 						1 => BlurNotification::LoginStart,
-						2 => BlurNotification::LoginEnd { success: true }, // FIXME: where login
-						3 => BlurNotification::Screen { name: "".to_string() }, // FIXME: Clean Lua (table) -> Rust BlurNotification enum
+						2 => BlurNotification::LoginEnd { success: true }, // FIXME: what success??
+						3 => BlurNotification::Screen { name: "".to_string() }, // FIXME: what Screen name??
 						_ => {
-							log::debug!("Got unknown notify({n}) event from Lua?");
+							log::warn!("Got unknown notify({n}) event from Lua?");
 							return 0;
 						}
 					};

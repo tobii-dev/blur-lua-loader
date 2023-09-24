@@ -1,6 +1,6 @@
 [package]
 name = "blur-lua-loader"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -12,8 +12,8 @@ crate-type = ["cdylib"]
 blur-plugins-core = { git = "https://github.com/tobii-dev/blur-plugins-core" }
 colored = "2.0.4"
 cstr = "0.2.11"
-log = "0.4.20"
+log = { version = "0.4.20", features = ["release_max_level_info"] }
 log-panics = { version = "2.1.0", features = ["with-backtrace"] }
-mlua-sys = { version = "0.3.2", features = ["lua51", "vendored"] } # TODO: We should stop using vendored here: Instead just ship a lua51.dll, so other plugins can load custom DLLs that use that lua51.dll runtime...
+mlua-sys = { version = "0.3.2", features = ["lua51", "module"] }
 simplelog = "0.12.1"
 windows = { version = "0.51.1", features = ["Win32_Foundation", "Win32_System_Memory", "Win32_System_LibraryLoader"] }
