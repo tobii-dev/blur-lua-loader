@@ -18,7 +18,7 @@ pub struct MyLuaHooksPlugin {}
 
 impl BlurPlugin for MyLuaHooksPlugin {
 	fn name(&self) -> &'static str {
-		"LuaHooksPlugin!"
+		"LuaHooksPlugin"
 	}
 
 	fn on_event(&self, _event: &BlurEvent) { }
