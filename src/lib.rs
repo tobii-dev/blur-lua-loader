@@ -21,14 +21,14 @@ impl BlurPlugin for MyLuaHooksPlugin {
 		"LuaHooksPlugin"
 	}
 
-	fn on_event(&self, _event: &BlurEvent) { }
+	fn on_event(&self, _event: &BlurEvent) {}
 
-	fn free(&self) { }
+	fn free(&self) {}
 }
 
 #[no_mangle]
 fn plugin_init(api: &'static mut dyn BlurAPI) -> Box<dyn BlurPlugin> {
-	//SAFETY: Not really; api shouldn't even be &'static
+	//SAFETY: Nah
 	unsafe { API = Some(Box::new(api)) }
 
 	let plugin = MyLuaHooksPlugin {};
@@ -37,10 +37,7 @@ fn plugin_init(api: &'static mut dyn BlurAPI) -> Box<dyn BlurPlugin> {
 		.set_time_offset_to_local()
 		.unwrap()
 		.build();
-	let log_path = std::format!(".\\amax\\log\\{}.log", plugin.name());
-	let log_file = std::fs::File::create(&log_path).unwrap_or_else(|_| {
-		panic!("Couldn't create log file: {log_path}");
-	});
+	let log_file = blur_plugins_core::create_log_file("lua_hooks.log").unwrap();
 	CombinedLogger::init(vec![
 		TermLogger::new(
 			LevelFilter::Trace,

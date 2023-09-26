@@ -214,6 +214,7 @@ pub unsafe extern "C-unwind" fn notify(s: *mut lua_State) -> c_int {
 
 				if let Some(blur_api) = &mut crate::API {
 					// FIXME: this makes no sense right now.
+					#[rustfmt::skip]
 					let notif = match n {
 						0 => BlurNotification::Nothing,
 						1 => BlurNotification::LoginStart,
