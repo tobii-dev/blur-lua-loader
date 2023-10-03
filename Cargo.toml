@@ -9,6 +9,10 @@ name = "lua_hooks"
 crate-type = ["cdylib"]
 
 
+[features]
+minhook = ["dep:minhook-sys"]
+
+
 [dependencies]
 blur-plugins-core = { git = "https://github.com/tobii-dev/blur-plugins-core" }
 
@@ -20,3 +24,5 @@ cstr = "0.2.11"
 
 mlua-sys = { version = "0.3.2", features = ["lua51", "module"] }
 windows = { version = "0.51.1", features = ["Win32_Foundation", "Win32_System_Memory", "Win32_System_LibraryLoader"] }
+
+minhook-sys = { version = "0.1.1", optional = true }

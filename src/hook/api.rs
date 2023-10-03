@@ -176,13 +176,10 @@ pub unsafe extern "C-unwind" fn print_debug(s: *mut lua_State) -> c_int {
 		output.push_str(&v);
 	}
 
-	//log::debug!("[Lua Debug] {output}");
+	log::debug!("[Lua Debug] {output}");
 
-	{
-		use colored::*;
-		let output = output.green();
-		std::println!("{output}");
-	}
+	// { use colored::*; std::println!("{}", output.green()); }
+
 	0
 }
 
