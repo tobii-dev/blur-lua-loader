@@ -2,7 +2,7 @@ name: Build lua_hooks.asi
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
   workflow_dispatch:
 
 env:
