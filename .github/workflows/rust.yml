@@ -22,9 +22,11 @@ jobs:
         rustup target add i686-pc-windows-msvc
 
     - name: Build debug [msvc]
+      shell: bash
       run: LUA_LIB_NAME=lib/lua5.1 LUA_LINK=cdylib cargo +nightly build --verbose --target=i686-pc-windows-msvc
       
     - name: Build release [msvc]
+      shell: bash
       run: LUA_LIB_NAME=lib/lua5.1 LUA_LINK=cdylib cargo +nightly build --verbose --release --target=i686-pc-windows-msvc
       
     - name: Collect debug artifact
