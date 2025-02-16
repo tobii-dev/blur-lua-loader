@@ -1,0 +1,42 @@
+name: Build lua_hooks.asi
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v4
+      
+    - name: Install nightly
+      run: |
+        rustup toolchain install nightly-x86_64-pc-windows-msvc
+        rustup default nightly
+        rustup target add i686-pc-windows-msvc
+
+    - name: Build debug [msvc]
+      run: LUA_LIB_NAME=lib/lua5.1 LUA_LINK=cdylib cargo +nightly build --verbose --target=i686-pc-windows-msvc
+      
+    - name: Build release [msvc]
+      run: LUA_LIB_NAME=lib/lua5.1 LUA_LINK=cdylib cargo +nightly build --verbose --release --target=i686-pc-windows-msvc
+      
+    - name: Collect debug artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: amax-redirects_debug
+        path: |
+          ./target/i686-pc-windows-msvc/debug/lua_hooks.dll
+
+    - name: Collect release artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: amax-redirects_release
+        path: |
+          ./target/i686-pc-windows-msvc/release/lua_hooks.dll
