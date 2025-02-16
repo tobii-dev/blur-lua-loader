@@ -17,6 +17,7 @@ unsafe extern "C" fn loadbuffer(
 	sz: usize,
 	name: *const c_char,
 ) -> c_int {
+	#![allow(static_mut_refs)]
 	static mut FIRST_LUA_STATE: Option<*mut lua_State> = None;
 
 	// native lua print by the Blur.exe

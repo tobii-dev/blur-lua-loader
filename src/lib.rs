@@ -2,16 +2,17 @@
 
 pub mod hook;
 
-use std::ffi::c_void;
+use std::{
+	ffi::c_void,
+	sync::{Mutex, OnceLock},
+};
 
 use crate::hook::loadbuffer::set_hook_loadbuffer;
-use windows::{core::PCSTR, Win32::System::LibraryLoader::GetModuleHandleA};
-
-use simplelog::*;
 
 use blur_plugins_core::{BlurAPI, BlurEvent, BlurPlugin};
+use log::LevelFilter;
 
-pub static mut API: Option<Box<&mut dyn BlurAPI>> = None;
+static API: OnceLock<Mutex<&mut dyn BlurAPI>> = OnceLock::new();
 
 #[repr(C)]
 pub struct MyLuaHooksPlugin {}
@@ -28,11 +29,21 @@ impl BlurPlugin for MyLuaHooksPlugin {
 
 #[no_mangle]
 fn plugin_init(api: &'static mut dyn BlurAPI) -> Box<dyn BlurPlugin> {
+	init_logs();
+	let ptr_base: *mut c_void = api.get_exe_base_ptr();
 	//SAFETY: Nah
-	unsafe { API = Some(Box::new(api)) }
+	API.set(Mutex::new(api)).map_err(|_| ()).unwrap();
 
 	let plugin = MyLuaHooksPlugin {};
+	set_hook_loadbuffer(ptr_base);
 
+	Box::new(plugin)
+}
+
+fn init_logs() {
+	use simplelog::{
+		ColorChoice, CombinedLogger, Config, ConfigBuilder, TermLogger, TerminalMode, WriteLogger,
+	};
 	let cfg = ConfigBuilder::new()
 		.set_time_offset_to_local()
 		.unwrap()
@@ -49,9 +60,4 @@ fn plugin_init(api: &'static mut dyn BlurAPI) -> Box<dyn BlurPlugin> {
 	])
 	.unwrap();
 	log_panics::init();
-
-	let ptr_base: *mut c_void = unsafe { GetModuleHandleA(PCSTR::null()) }.unwrap().0 as _;
-	set_hook_loadbuffer(ptr_base);
-
-	Box::new(plugin)
 }

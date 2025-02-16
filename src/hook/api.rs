@@ -7,12 +7,8 @@ use mlua_sys::{
 	lua_type, LUA_TBOOLEAN, LUA_TFUNCTION, LUA_TLIGHTUSERDATA, LUA_TNIL, LUA_TNONE, LUA_TNUMBER,
 	LUA_TSTRING, LUA_TTABLE, LUA_TTHREAD, LUA_TUSERDATA,
 };
-use windows::{
-	core::PCSTR,
-	Win32::System::{
-		LibraryLoader::GetModuleHandleA,
-		Memory::{VirtualProtect, PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS},
-	},
+use windows::Win32::System::Memory::{
+	VirtualProtect, PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS,
 };
 
 pub unsafe extern "C-unwind" fn set_fps(s: *mut lua_State) -> c_int {
@@ -24,9 +20,7 @@ pub unsafe extern "C-unwind" fn set_fps(s: *mut lua_State) -> c_int {
 			LUA_TBOOLEAN => {
 				let limit = lua_toboolean(s, idx) != 0;
 				if !limit {
-					if let Some(blur_api) = &mut crate::API {
-						blur_api.set_fps(0.0);
-					}
+					crate::API.get().unwrap().lock().unwrap().set_fps(0.0);
 				}
 			}
 			LUA_TNUMBER => {
@@ -37,10 +31,7 @@ pub unsafe extern "C-unwind" fn set_fps(s: *mut lua_State) -> c_int {
 				if fps < 0.0 {
 					fps = 0.0;
 				}
-				if let Some(blur_api) = &mut crate::API {
-					log::trace!("set_fps(fps = {fps})");
-					blur_api.set_fps(fps);
-				}
+				crate::API.get().unwrap().lock().unwrap().set_fps(fps);
 			}
 			_ => {}
 		};
@@ -50,9 +41,8 @@ pub unsafe extern "C-unwind" fn set_fps(s: *mut lua_State) -> c_int {
 
 //TODO: Should this be here? Or should this be part of blur_api?
 fn set_solo_racer_bit(bit: bool) {
-	// log::info!("{}", bit);
-	let ptr_base: *mut c_void =
-		unsafe { GetModuleHandleA(PCSTR::null()) }.unwrap().0 as *mut c_void;
+	let ptr_base: *mut c_void = { crate::API.get().unwrap().lock().unwrap().get_exe_base_ptr() };
+
 	const ADDY_BYTE_SOLO_RACER: isize = 0xE25800;
 
 	let ptr_dst = ptr_base.wrapping_offset(ADDY_BYTE_SOLO_RACER);
@@ -105,7 +95,8 @@ pub unsafe extern "C-unwind" fn print_api(s: *mut lua_State) -> c_int {
 			LUA_TSTRING => {
 				let t = lua_tostring(s, idx);
 				let t = CStr::from_ptr(t).to_str().unwrap();
-				std::format!("{t}")
+				// std::format!("{t}")
+				t.to_string()
 			}
 			LUA_TTABLE => {
 				let t = lua_gettable(s, idx);
@@ -212,21 +203,19 @@ pub unsafe extern "C-unwind" fn notify(s: *mut lua_State) -> c_int {
 				}
 				let n: i64 = n as i64;
 
-				if let Some(blur_api) = &mut crate::API {
-					// FIXME: this makes no sense right now.
-					#[rustfmt::skip]
-					let notif = match n {
-						0 => BlurNotification::Nothing,
-						1 => BlurNotification::LoginStart,
-						2 => BlurNotification::LoginEnd { success: true }, // FIXME: what success??
-						3 => BlurNotification::Screen { name: "".to_string() }, // FIXME: what Screen name??
-						_ => {
-							log::warn!("Got unknown notify({n}) event from Lua?");
-							return 0;
-						}
-					};
-					blur_api.notify(notif);
-				}
+				// FIXME: Translations should be documented or something, this doesn't make much sense on its own.
+				#[rustfmt::skip]
+				let notif = match n {
+					0 => BlurNotification::Nothing,
+					1 => BlurNotification::LoginStart,
+					2 => BlurNotification::LoginEnd { success: true }, // FIXME: what success??
+					3 => BlurNotification::Screen { name: "".to_string() }, // FIXME: what Screen name??
+					_ => {
+						log::warn!("Got unknown notify({n}) event from Lua?");
+						return 0;
+					}
+				};
+				crate::API.get().unwrap().lock().unwrap().notify(notif);
 			}
 			LUA_TSTRING => {
 				let t = lua_tostring(s, idx);
