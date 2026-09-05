@@ -36,7 +36,7 @@ jobs:
       
     - name: Build [Release]
       shell: bash
-      run: LUA_LIB_NAME=lib/lua5.1 LUA_LINK=cdylib cargo build --verbose
+      run: LUA_LIB_NAME=lib/lua5.1 LUA_LINK=cdylib cargo build --verbose --release
       
       # TODO: Ship required Lua files:
       # - amax/init.lua
