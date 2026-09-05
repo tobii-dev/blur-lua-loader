@@ -1,4 +1,4 @@
-name: Build lua_hooks.asi
+name: Build
 
 on:
   push:
