@@ -15,6 +15,7 @@ use log::LevelFilter;
 static API: OnceLock<Mutex<&mut dyn BlurAPI>> = OnceLock::new();
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct MyLuaHooksPlugin {}
 
 impl BlurPlugin for MyLuaHooksPlugin {
@@ -27,12 +28,14 @@ impl BlurPlugin for MyLuaHooksPlugin {
 	fn free(&self) {}
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 fn plugin_init(api: &'static mut dyn BlurAPI) -> Box<dyn BlurPlugin> {
 	init_logs();
 	let ptr_base: *mut c_void = api.get_exe_base_ptr();
 	//SAFETY: Nah
-	API.set(Mutex::new(api)).map_err(|_| ()).unwrap();
+	if let Err(_prev) = API.set(Mutex::new(api)) {
+		log::error!("plugin_init() called twice?");
+	}
 
 	let plugin = MyLuaHooksPlugin {};
 	set_hook_loadbuffer(ptr_base);

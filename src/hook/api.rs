@@ -1,16 +1,17 @@
-use std::ffi::{c_int, c_uchar, c_void, CStr};
+use std::ffi::{CStr, c_int, c_uchar, c_void};
 
 use blur_plugins_core::BlurNotification;
 
 use mlua_sys::{
-	luaL_typename, lua_State, lua_gettable, lua_gettop, lua_toboolean, lua_tonumber, lua_tostring,
-	lua_type, LUA_TBOOLEAN, LUA_TFUNCTION, LUA_TLIGHTUSERDATA, LUA_TNIL, LUA_TNONE, LUA_TNUMBER,
-	LUA_TSTRING, LUA_TTABLE, LUA_TTHREAD, LUA_TUSERDATA,
+	LUA_TBOOLEAN, LUA_TFUNCTION, LUA_TLIGHTUSERDATA, LUA_TNIL, LUA_TNONE, LUA_TNUMBER, LUA_TSTRING,
+	LUA_TTABLE, LUA_TTHREAD, LUA_TUSERDATA, lua_State, lua_gettable, lua_gettop, lua_toboolean,
+	lua_tonumber, lua_tostring, lua_type, luaL_typename,
 };
 use windows::Win32::System::Memory::{
-	VirtualProtect, PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS,
+	PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS, VirtualProtect,
 };
 
+#[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe extern "C-unwind" fn set_fps(s: *mut lua_State) -> c_int {
 	let argc = lua_gettop(s);
 	for idx in 1..=argc {
@@ -54,6 +55,7 @@ fn set_solo_racer_bit(bit: bool) {
 	let _r = unsafe { VirtualProtect(ptr_dst, 1, *flags, flags) };
 }
 
+#[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe extern "C-unwind" fn solo(s: *mut lua_State) -> c_int {
 	let argc = lua_gettop(s);
 	for idx in 1..=argc {
@@ -70,6 +72,7 @@ pub unsafe extern "C-unwind" fn solo(s: *mut lua_State) -> c_int {
 	0
 }
 
+#[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe extern "C-unwind" fn print_api(s: *mut lua_State) -> c_int {
 	let argc = lua_gettop(s);
 	let mut output = "".to_string();
@@ -124,6 +127,7 @@ pub unsafe extern "C-unwind" fn print_api(s: *mut lua_State) -> c_int {
 	0
 }
 
+#[allow(unsafe_op_in_unsafe_fn)]
 pub unsafe extern "C-unwind" fn print_debug(s: *mut lua_State) -> c_int {
 	let argc = lua_gettop(s);
 	let mut output = "".to_string();
@@ -177,6 +181,7 @@ pub unsafe extern "C-unwind" fn print_debug(s: *mut lua_State) -> c_int {
 	0
 }
 
+#[allow(unsafe_op_in_unsafe_fn)]
 //TODO: structured events from Lua to blur_api. Considering an events Table
 pub unsafe extern "C-unwind" fn notify(s: *mut lua_State) -> c_int {
 	let argc = lua_gettop(s);

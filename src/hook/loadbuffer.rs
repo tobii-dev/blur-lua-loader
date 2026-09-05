@@ -1,12 +1,12 @@
 use cstr::cstr;
 use mlua_sys::{
-	luaL_dofile, luaL_loadbuffer, lua_State, lua_pushcfunction, lua_setglobal, luaopen_package,
+	lua_State, lua_pushcfunction, lua_setglobal, luaL_dofile, luaL_loadbuffer, luaopen_package,
 	luaopen_string,
 };
 use std::ffi::{c_char, c_int, c_void};
 
 use windows::Win32::System::Memory::{
-	VirtualProtect, PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS,
+	PAGE_EXECUTE_READWRITE, PAGE_PROTECTION_FLAGS, VirtualProtect,
 };
 
 use crate::hook::api;
@@ -17,39 +17,41 @@ unsafe extern "C" fn loadbuffer(
 	sz: usize,
 	name: *const c_char,
 ) -> c_int {
-	#![allow(static_mut_refs)]
-	static mut FIRST_LUA_STATE: Option<*mut lua_State> = None;
+	unsafe {
+		#![allow(static_mut_refs)]
+		static mut FIRST_LUA_STATE: Option<*mut lua_State> = None;
 
-	// native lua print by the Blur.exe
-	lua_pushcfunction(s, api::print_debug);
-	lua_setglobal(s, cstr!("print").as_ptr());
+		// native lua print by the Blur.exe
+		lua_pushcfunction(s, api::print_debug);
+		lua_setglobal(s, cstr!("print").as_ptr());
 
-	// "our" print used by plugins
-	lua_pushcfunction(s, api::print_api);
-	lua_setglobal(s, cstr!("print_api").as_ptr());
+		// "our" print used by plugins
+		lua_pushcfunction(s, api::print_api);
+		lua_setglobal(s, cstr!("print_api").as_ptr());
 
-	// set bit to allow solo racing
-	lua_pushcfunction(s, api::solo);
-	lua_setglobal(s, cstr!("solo").as_ptr());
+		// set bit to allow solo racing
+		lua_pushcfunction(s, api::solo);
+		lua_setglobal(s, cstr!("solo").as_ptr());
 
-	// used for coding horrors
-	lua_pushcfunction(s, api::notify);
-	lua_setglobal(s, cstr!("notify").as_ptr());
+		// used for coding horrors
+		lua_pushcfunction(s, api::notify);
+		lua_setglobal(s, cstr!("notify").as_ptr());
 
-	// used for fps limiter
-	lua_pushcfunction(s, api::set_fps);
-	lua_setglobal(s, cstr!("set_fps").as_ptr());
+		// used for fps limiter
+		lua_pushcfunction(s, api::set_fps);
+		lua_setglobal(s, cstr!("set_fps").as_ptr());
 
-	if FIRST_LUA_STATE.is_none() {
-		log::trace!("Hooked luaL_loadbuffer(lua_State = {s:#?})");
-		luaopen_package(s);
-		luaopen_string(s);
-		luaL_dofile(s, cstr!("amax/init.luac").as_ptr()); // compiled, used for testing
-		luaL_dofile(s, cstr!("amax/init.lua").as_ptr()); //TODO: compile me
-		FIRST_LUA_STATE = Some(s);
-	};
+		if FIRST_LUA_STATE.is_none() {
+			log::trace!("Hooked luaL_loadbuffer(lua_State = {s:#?})");
+			luaopen_package(s);
+			luaopen_string(s);
+			luaL_dofile(s, cstr!("amax/init.luac").as_ptr()); // compiled, used for testing
+			luaL_dofile(s, cstr!("amax/init.lua").as_ptr()); //TODO: compile me
+			FIRST_LUA_STATE = Some(s);
+		};
 
-	luaL_loadbuffer(s, buff, sz, name)
+		luaL_loadbuffer(s, buff, sz, name)
+	}
 }
 
 /// Hooks Blur.exe original luaL_loadbuffer() function with our custom one.
