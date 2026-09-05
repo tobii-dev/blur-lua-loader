@@ -12,33 +12,67 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-    - name: Checkout sources
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       
-    - name: Install nightly
+    - name: Versions
+      shell: bash
       run: |
-        rustup toolchain install nightly-x86_64-pc-windows-msvc
-        rustup default nightly
-        rustup target add i686-pc-windows-msvc
+        rustup --version
+        cargo --version
+        rustc --version
 
-    - name: Build debug [msvc]
-      shell: bash
-      run: LUA_LIB_NAME=lib/lua5.1 LUA_LINK=cdylib cargo +nightly build --verbose --target=i686-pc-windows-msvc
-      
-    - name: Build release [msvc]
-      shell: bash
-      run: LUA_LIB_NAME=lib/lua5.1 LUA_LINK=cdylib cargo +nightly build --verbose --release --target=i686-pc-windows-msvc
-      
-    - name: Collect debug artifact
-      uses: actions/upload-artifact@v4
+    - name: Cache
+      uses: actions/cache@v6
       with:
-        name: amax-redirects_debug
         path: |
-          ./target/i686-pc-windows-msvc/debug/lua_hooks.dll
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-    - name: Collect release artifact
-      uses: actions/upload-artifact@v4
+    - name: Build [Debug]
+      shell: bash
+      run: LUA_LIB_NAME=lib/lua5.1 LUA_LINK=cdylib cargo build --verbose
+      
+    - name: Build [Release]
+      shell: bash
+      run: LUA_LIB_NAME=lib/lua5.1 LUA_LINK=cdylib cargo build --verbose
+      
+      # TODO: Ship required Lua files:
+      # - amax/init.lua
+      # - amax/init.luac
+      # - amax/plugins/loader.lua (optional)
+      # - amax/plugins/*/*.lua (optional)
+    - name: Create zips
+      shell: bash
+      run: |
+        python3 - <<'!EOF'
+        from zipfile import ZipFile, ZIP_DEFLATED
+
+        with ZipFile("lua-loader-debug.zip", "w", compression=ZIP_DEFLATED) as zf:
+            zf.write("./target/i686-pc-windows-msvc/debug/lua_hooks.dll", "amax/dlls/lua_hooks.dll")
+            zf.write("./target/i686-pc-windows-msvc/debug/lua_hooks.pdb", "amax/dlls/lua_hooks.pdb")
+
+        with ZipFile("lua-loader-release.zip", "w", compression=ZIP_DEFLATED) as zf:
+            zf.write("./target/i686-pc-windows-msvc/release/lua_hooks.dll", "amax/dlls/lua_hooks.dll")
+        !EOF
+      
+    - name: Upload artifact
+      uses: actions/upload-artifact@v7
       with:
-        name: amax-redirects_release
+        name: windows-build
         path: |
-          ./target/i686-pc-windows-msvc/release/lua_hooks.dll
+          ./lua-loader-debug.zip
+          ./lua-loader-release.zip
+
+    - name: Publish to GitHub releases
+      env:
+        GH_TOKEN: ${{ github.token }}
+      shell: bash
+      run: |
+        gh release create "${EPOCHREALTIME}-build-${GITHUB_SHA}" \
+          ./lua-loader-debug.zip \
+          ./lua-loader-release.zip \
+          --title "$TAG" \
+          --notes "Automated build artifacts" \
+          --prerelease
